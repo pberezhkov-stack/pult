@@ -22,6 +22,7 @@ button{font:inherit;cursor:pointer;min-height:48px;border-radius:12px;border:0;f
 .main{background:var(--ok);color:#0F1720}.warnb{background:var(--warn);color:#0F1720}.bad{background:var(--bad);color:#0F1720}
 .ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:600}
 .btns{display:flex;gap:10px;margin-top:10px}.btns button{flex:1}
+.proj{cursor:pointer}.det{display:none;margin:10px 0 0 20px;font-size:13px;color:var(--muted);line-height:1.5}.det.open{display:block}.det b{color:var(--text)}
 .stale{color:var(--warn);font-size:12px;margin-top:6px}
 </style>
 </head>
@@ -35,17 +36,14 @@ button{font:inherit;cursor:pointer;min-height:48px;border-radius:12px;border:0;f
 <div id="pend"></div>
 
 <h2>Проекты</h2>
-<div class="card"><div class="p"><span class="dot" style="background:var(--ok)"></span><div><b>Черногория Сегодня</b><small>автопосты, проверка фактов, VK и Telegram</small></div></div></div>
-<div class="card"><div class="p"><span class="dot" style="background:var(--muted)"></span><div><b>Сербия Сегодня</b><small>тихий режим: только сбор</small></div></div></div>
-<div class="card"><div class="p"><span class="dot" style="background:var(--warn)"></span><div><b>Группа «Бар, Черногория»</b><small>модерирует бот от имени CityBot</small></div></div></div>
-<div class="card"><div class="p"><span class="dot" style="background:var(--ok)"></span><div><b>Remont CG · yourhome.me · MonteWool</b><small>страницы, посты по согласованию</small></div></div></div>
+<div id="projects"></div>
 
 <script>
 const tg = window.Telegram && Telegram.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 function dec(){
   try{
-    const h=location.hash.replace(/^#/,'');
+    const h=(new URLSearchParams(location.search).get('d'))||location.hash.replace(/^#/,'');
     if(!h) return null;
     const b=h.replace(/-/g,'+').replace(/_/g,'/');
     const bin=atob(b+'==='.slice((b.length+3)%4));
@@ -76,6 +74,17 @@ if(!d){
     pend.querySelectorAll('button').forEach(b=>b.onclick=()=>send(b.dataset.c));
   }
 }
+
+const PROJ=[
+ ['var(--ok)','Черногория Сегодня','автопосты, проверка фактов, VK и Telegram','<b>Площадки:</b> Telegram-канал, VK, Facebook-страница, Дзен, WhatsApp. Threads ждёт ключ.<br><b>Задачи Claude:</b> 12:07 посты в свои группы, 15:23 комментарии (нужен Chrome с расширением).'],
+ ['var(--muted)','Сербия Сегодня','тихий режим: только сбор','<b>Цель:</b> запуск в понедельник.<br><b>Сбор:</b> 8 Telegram-каналов раз в день, 14 новостных сайтов с 11:00, Facebook через монитор.<br>Ничего не публикуется, пока не запустимся.'],
+ ['var(--warn)','Группа «Бар, Черногория»','модерирует бот от имени CityBot','<b>Правила:</b> реклама: удалить и мьют на 3 дня. Лимит 4 действия за круг и 15 в день.<br><b>Режим</b> переключается кнопкой выше. Для авто нужен отдельный Chrome модератора (порт 9224).'],
+ ['var(--ok)','Remont CG','страница, радар запросов из групп','Ремонт и сервис в Баре. Работаем только через страницу. Монитор собирает просьбы найти мастера, ответы после твоего «ок».'],
+ ['var(--ok)','yourhome.me','страница, присмотр за домом','Присмотр за недвижимостью для собственников. Посты-кейсы, связка с Remont CG. Продвигаем только через страницу.'],
+ ['var(--ok)','MonteWool','страница Ольки','Шерсть и изделия. Нужны фото и истории от Ольки, бот не выдумывает детали.']
+];
+document.getElementById('projects').innerHTML=PROJ.map((p,i)=>'<div class="card proj" data-i="'+i+'"><div class="p"><span class="dot" style="background:'+p[0]+'"></span><div><b>'+p[1]+'</b><small>'+p[2]+'</small></div></div><div class="det" id="det'+i+'">'+p[3]+'</div></div>').join('');
+document.querySelectorAll('.proj').forEach(el=>el.onclick=()=>document.getElementById('det'+el.dataset.i).classList.toggle('open'));
 </script>
 </body>
 </html>
