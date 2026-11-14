@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Пульт агента</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#0F1720;--card:#17212C;--text:#E8EEF4;--muted:#9BB0C3;--ok:#3DD6B0;--warn:#F5B84B;--bad:#FF7A7A;--line:#3A4C60}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:20px 16px 32px}
+h1{margin:0;font-size:24px;letter-spacing:-.02em}
+h2{margin:22px 0 8px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pill{background:var(--card);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;white-space:nowrap}
+.card{background:var(--card);border-radius:16px;padding:14px 16px;margin-top:10px}
+.muted{color:var(--muted);font-size:13px;line-height:1.45}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:10px;vertical-align:middle}
+.p{display:flex;align-items:center;gap:2px;min-height:44px}
+.p b{font-size:15px}.p small{display:block;color:var(--muted);font-size:12px;margin-left:20px}
+button{font:inherit;cursor:pointer;min-height:48px;border-radius:12px;border:0;font-weight:700;font-size:14px;padding:0 14px}
+.main{background:var(--ok);color:#0F1720}.warnb{background:var(--warn);color:#0F1720}.bad{background:var(--bad);color:#0F1720}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:600}
+.btns{display:flex;gap:10px;margin-top:10px}.btns button{flex:1}
+.stale{color:var(--warn);font-size:12px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="row"><h1>Пульт агента</h1><span class="pill" id="st">…</span></div>
+<div class="muted" id="when" style="margin-top:6px"></div>
+
+<div class="card" id="actions"></div>
+
+<h2>Ждут решения</h2>
+<div id="pend"></div>
+
+<h2>Проекты</h2>
+<div class="card"><div class="p"><span class="dot" style="background:var(--ok)"></span><div><b>Черногория Сегодня</b><small>автопосты, проверка фактов, VK и Telegram</small></div></div></div>
+<div class="card"><div class="p"><span class="dot" style="background:var(--muted)"></span><div><b>Сербия Сегодня</b><small>тихий режим: только сбор</small></div></div></div>
+<div class="card"><div class="p"><span class="dot" style="background:var(--warn)"></span><div><b>Группа «Бар, Черногория»</b><small>модерирует бот от имени CityBot</small></div></div></div>
+<div class="card"><div class="p"><span class="dot" style="background:var(--ok)"></span><div><b>Remont CG · yourhome.me · MonteWool</b><small>страницы, посты по согласованию</small></div></div></div>
+
+<script>
+const tg = window.Telegram && Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+function dec(){
+  try{
+    const h=location.hash.replace(/^#/,'');
+    if(!h) return null;
+    const b=h.replace(/-/g,'+').replace(/_/g,'/');
+    const bin=atob(b+'==='.slice((b.length+3)%4));
+    return JSON.parse(decodeURIComponent(escape(bin)));
+  }catch(e){return null}
+}
+function send(c){ if(tg){ tg.sendData(JSON.stringify({c:c})); } else { alert('Открой пульт из Telegram'); } }
+function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+const d=dec();
+const st=document.getElementById('st'), when=document.getElementById('when'), act=document.getElementById('actions'), pend=document.getElementById('pend');
+if(!d){
+  st.textContent='нет данных'; when.textContent='Открой пульт кнопкой из личного чата с ботом: команда /пульт.';
+}else{
+  st.textContent=d.paused?'Автопосты: пауза':'Автопосты идут';
+  st.style.color=d.paused?'var(--warn)':'var(--ok)';
+  const t=new Date(d.ts*1000);
+  when.textContent='Данные на '+t.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+' · постов сегодня: '+d.ac;
+  if(Date.now()/1000-d.ts>900){when.insertAdjacentHTML('afterend','<div class="stale">Данные старше 15 минут, обнови командой /пульт</div>');}
+  act.innerHTML='<div class="muted">Модерация «Бара»: <b style="color:var(--text)">'+(d.mode==='auto'?'авто':'вручную')+'</b></div>'+
+    '<div class="btns"><button class="'+(d.paused?'main':'warnb')+'" id="b1">'+(d.paused?'Включить автопосты':'Пауза автопостов')+'</button>'+
+    '<button class="ghost" id="b2">'+(d.mode==='auto'?'Модерация: вручную':'Модерация: авто')+'</button></div>';
+  document.getElementById('b1').onclick=()=>send(d.paused?'старт':'стоп');
+  document.getElementById('b2').onclick=()=>send(d.mode==='auto'?'мод вручную':'мод авто');
+  if(!d.pend||!d.pend.length){pend.innerHTML='<div class="card muted">Пока ничего не ждёт.</div>';}
+  else{
+    pend.innerHTML=d.pend.map(x=>'<div class="card"><div class="muted">мод '+esc(x.n)+' · '+esc(x.who||'автор неизвестен')+'</div>'+
+      '<div class="btns"><button class="bad" data-c="мод '+esc(x.n)+'">Удалить и мьют</button><button class="ghost" data-c="мод '+esc(x.n)+' нет">Оставить</button></div></div>').join('');
+    pend.querySelectorAll('button').forEach(b=>b.onclick=()=>send(b.dataset.c));
+  }
+}
+</script>
+</body>
+</html>
