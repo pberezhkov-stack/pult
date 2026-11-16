@@ -63,11 +63,11 @@ function when(){if(!has)return '<div class="muted" style="margin-top:6px">Нет
  if(Date.now()/1000-D.ts>900)s+='<div class="stale">Данные старше 15 минут</div>';return s;}
 const PROJ=[
  {k:'chs',c:'var(--ok)',n:'Черногория Сегодня',s:()=>has?(paused?'Автопосты на паузе':'Автопосты идут, сегодня: '+ac):'Автопосты, проверка фактов'},
- {k:'ss',c:'var(--ok)',n:'Сербия Сегодня',s:()=>has?'Автопостинг в канал, сегодня: '+sc:'Автопостинг в Telegram-канал'},
+ {k:'ss',c:'var(--ok)',n:'Сербия Сегодня',s:()=>has?'Канал сегодня: '+sc+', Facebook: '+(D.fs||0):'Автопостинг в Telegram-канал'},
  {k:'bar',c:'var(--warn)',n:'Группа «Бар, Черногория»',s:()=>has?('Модерация: '+(auto?'авто':'вручную')+', ждут: '+pend.length):'Модерирует бот от имени CityBot',w:1},
  {k:'rem',c:'var(--ok)',n:'Remont CG',s:()=>'Радар запросов из групп'},
  {k:'home',c:'var(--ok)',n:'yourhome.me',s:()=>'Присмотр за домом'},
- {k:'wool',c:'var(--warn)',n:'MonteWool',s:()=>has?('Каталог: '+((D.mw||{}).ph||0)+' фото, заявок в группы: '+((D.mw||{}).gr||0)+', заявок покупателей: '+((D.mw||{}).ld||0)):'Страница Ольки: вязаные вещи 0–3 мес'}
+ {k:'wool',c:'var(--warn)',n:'MonteWool',s:()=>has?('Вещей: '+((D.mw||{}).it||0)+' (в наличии '+((D.mw||{}).av||0)+'), групп: '+((D.mw||{}).gm||0)+', заявок в группы: '+((D.mw||{}).gr||0)+', заявок покупателей: '+((D.mw||{}).ld||0)):'Страница Ольки: вязаные вещи 0–3 мес'}
 ];
 function projDetail(k){
  if(k==='chs')return '<div class="card"><div class="muted">Последний автопост</div><div class="big">'+(has?'сегодня '+ac:'—')+'</div><div class="muted">Telegram-канал и VK. Перед выходом бот сверяет факты по источникам.</div></div>'+
@@ -75,7 +75,7 @@ function projDetail(k){
   '<h2>Задачи Claude</h2><div class="card"><div class="kv"><span>12:07 посты в свои группы</span><span>нужен Chrome</span></div><div class="kv"><span>15:23 комментарии</span><span>по расписанию</span></div></div>'+
   (has?'<div class="btns"><button class="'+(paused?'main':'warnb')+'" data-c="'+(paused?'старт':'стоп')+'">'+(paused?'Включить автопосты':'Пауза автопостов')+'</button></div>':'');
  if(k==='ss')return '<div class="card"><div class="muted">Сегодня опубликовано</div><div class="big">'+(has?sc:'—')+'</div><div class="muted">Канал @serbija_today. Слоты 11:00, 15:00, 19:00, до 4 постов в день, публикация после сверки фактов.</div></div>'+
-  '<h2>Сбор</h2><div class="card"><div class="kv"><span>Telegram: 8 каналов</span><span>раз в день</span></div><div class="kv"><span>Сайты: 14 лент</span><span>с 11:00</span></div><div class="kv"><span>Facebook, VK</span><span>не подключены</span></div></div>'+
+  '<h2>Сбор</h2><div class="card"><div class="kv"><span>Telegram: 8 каналов</span><span>раз в день</span></div><div class="kv"><span>Сайты: 14 лент</span><span>с 11:00</span></div><div class="kv"><span>Страница Facebook, сегодня</span><span>'+(has?(D.fs||0):'—')+'</span></div><div class="kv"><span>VK</span><span>не подключён</span></div></div>'+
   '<div class="btns"><button class="warnb" data-c="стоп сс">Пауза СС</button><button class="ghost" data-c="старт сс">Включить СС</button></div>';
  if(k==='bar')return '<div class="card"><div class="muted">Режим модерации: <b style="color:var(--text)">'+(auto?'авто':'вручную')+'</b></div><div class="btns"><button class="'+(auto?'ghost':'main')+'" data-c="'+(auto?'мод вручную':'мод авто')+'">'+(auto?'Перевести на вручную':'Включить авто')+'</button></div></div>'+
   '<h2>Правила бота</h2><div class="card"><div class="kv"><span>Реклама</span><span>удалить и мьют 3 дня</span></div><div class="kv"><span>Лимит за круг</span><span>4 действия</span></div><div class="kv"><span>Лимит в день</span><span>15 действий</span></div><div class="kv"><span>Спорные посты</span><span>два голоса моделей</span></div></div>'+
@@ -85,9 +85,9 @@ function projDetail(k){
  if(k==='home')return '<div class="card"><div class="muted">Присмотр за домом и обслуживание недвижимости для собственников, которые живут не в Черногории круглый год. Продвигаем только через страницу.</div></div><h2>План</h2><div class="card"><div class="kv"><span>Посты-кейсы</span><span>что проверили</span></div><div class="kv"><span>Ответы в группах</span><span>на вопросы</span></div><div class="kv"><span>Связка с Remont CG</span><span>заявка на ремонт</span></div></div>';
  const W=D.mw||{};
  return '<div class="card"><div class="muted">Вязаные вещи для детей 0–3 месяцев. Страница ведёт вступления в группы Черногории, ответы на комментарии и сбор заявок.</div></div>'+
-  '<h2>Статистика</h2><div class="card"><div class="kv"><span>Фото в каталоге</span><span>'+(has?(W.ph||0):'—')+'</span></div><div class="kv"><span>Вступила в группы</span><span>'+(has?(W.gm||0):'—')+'</span></div><div class="kv"><span>Заявки в группы</span><span>'+(has?(W.gr||0):'—')+'</span></div><div class="kv"><span>Заявки покупателей</span><span>'+(has?(W.ld||0):'—')+'</span></div></div>'+
-  '<h2>Как добавить фото</h2><div class="card"><div class="muted">В чат «Ai Agent» напиши «мв фото», затем присылай фото. В подписи цена, размер, материал. Выключить: «мв стоп».</div></div>'+
-  '<div class="muted" style="margin-top:10px">Нужен отдельный Chrome страницы (порт 9225). Пока режим «тень».</div>';
+  '<h2>Статистика</h2><div class="card"><div class="kv"><span>Вещей в каталоге</span><span>'+(has?(W.it||0):'—')+'</span></div><div class="kv"><span>В наличии</span><span>'+(has?(W.av||0):'—')+'</span></div><div class="kv"><span>Продано</span><span>'+(has?((W.it||0)-(W.av||0)):'—')+'</span></div><div class="kv"><span>Постов в группы</span><span>'+(has?(W.pp||0):'—')+'</span></div><div class="kv"><span>Групп в очереди</span><span>'+(has?(W.gq||0):'—')+'</span></div><div class="kv"><span>Фото в каталоге</span><span>'+(has?(W.ph||0):'—')+'</span></div><div class="kv"><span>Вступила в группы</span><span>'+(has?(W.gm||0):'—')+'</span></div><div class="kv"><span>Заявки в группы</span><span>'+(has?(W.gr||0):'—')+'</span></div><div class="kv"><span>Заявки покупателей</span><span>'+(has?(W.ld||0):'—')+'</span></div></div>'+
+  '<h2>Как добавить вещь</h2><div class="card"><div class="muted">В группу «Montewool Team» пришли пачку фото с подписью: что это, материал, размер, цена. Бот напишет описание, жми «ок» или «no». Продали: «продано MW-0001». Список: «каталог».</div></div>'+
+  '<div class="muted" style="margin-top:10px">Страница MonteWool работает в своём Chrome (порт 9225). Посты в группы идут на языке группы.</div>';
 }
 let tab='home',proj=null;
 function render(){
@@ -110,7 +110,7 @@ function render(){
   h+='<h1>Отчёты</h1>'+
   '<div class="card"><div class="row"><b style="font-size:15px">Новости Сербии</b><span class="muted">ежедневно с 11:00</span></div><div class="muted" style="margin-top:6px">Выжимка из 14 сербских сайтов: визы, ВНЖ, налоги, цены, жильё.</div></div>'+
   '<div class="card"><div class="row"><b style="font-size:15px">Telegram Сербии</b><span class="muted">раз в день</span></div><div class="muted" style="margin-top:6px">Обход 8 публичных каналов: темы, реклама, отклик.</div></div>'+
-  '<div class="card"><div class="row"><b style="font-size:15px">Публикации</b><span class="muted">сегодня</span></div><div class="kv"><span>Черногория Сегодня</span><span>'+(has?ac:'—')+'</span></div><div class="kv"><span>Сербия Сегодня</span><span>'+(has?sc:'—')+'</span></div></div>'+
+  '<div class="card"><div class="row"><b style="font-size:15px">Публикации</b><span class="muted">сегодня</span></div><div class="kv"><span>Черногория Сегодня</span><span>'+(has?ac:'—')+'</span></div><div class="kv"><span>Сербия Сегодня, канал</span><span>'+(has?sc:'—')+'</span></div><div class="kv"><span>Сербия Сегодня, Facebook</span><span>'+(has?(D.fs||0):'—')+'</span></div><div class="kv"><span>MonteWool, постов в группы</span><span>'+(has?((D.mw||{}).pp||0):'—')+'</span></div></div>'+
   '<div class="card"><div class="muted">Чеки и расходы: фото чека в чат «Ai Agent», строки пишутся в таблицу на ПК.</div></div>';
  }
  v.innerHTML=h;v.scrollTop=0;
