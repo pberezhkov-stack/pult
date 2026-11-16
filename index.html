@@ -67,7 +67,7 @@ const PROJ=[
  {k:'bar',c:'var(--warn)',n:'Группа «Бар, Черногория»',s:()=>has?('Модерация: '+(auto?'авто':'вручную')+', ждут: '+pend.length):'Модерирует бот от имени CityBot',w:1},
  {k:'rem',c:'var(--ok)',n:'Remont CG',s:()=>'Радар запросов из групп'},
  {k:'home',c:'var(--ok)',n:'yourhome.me',s:()=>'Присмотр за домом'},
- {k:'wool',c:'var(--ok)',n:'MonteWool',s:()=>'Страница Ольки'}
+ {k:'wool',c:'var(--warn)',n:'MonteWool',s:()=>has?('Каталог: '+((D.mw||{}).ph||0)+' фото, заявок в группы: '+((D.mw||{}).gr||0)+', заявок покупателей: '+((D.mw||{}).ld||0)):'Страница Ольки: вязаные вещи 0–3 мес'}
 ];
 function projDetail(k){
  if(k==='chs')return '<div class="card"><div class="muted">Последний автопост</div><div class="big">'+(has?'сегодня '+ac:'—')+'</div><div class="muted">Telegram-канал и VK. Перед выходом бот сверяет факты по источникам.</div></div>'+
@@ -83,7 +83,11 @@ function projDetail(k){
   '<div class="btns"><button class="main" data-go="queue">Открыть очередь</button></div>';
  if(k==='rem')return '<div class="card"><div class="muted">Ремонт и сервис в Баре: плитка, гидроизоляция, сантехника, электрика, камеры, ТВ. Работаем только через страницу.</div></div><h2>Что делает бот</h2><div class="card"><div class="kv"><span>Запросы из групп</span><span>в очередь</span></div><div class="kv"><span>Группа «Черногория»</span><span>только просмотр</span></div><div class="kv"><span>Ответы мастера</span><span>после твоего «ок»</span></div></div>';
  if(k==='home')return '<div class="card"><div class="muted">Присмотр за домом и обслуживание недвижимости для собственников, которые живут не в Черногории круглый год. Продвигаем только через страницу.</div></div><h2>План</h2><div class="card"><div class="kv"><span>Посты-кейсы</span><span>что проверили</span></div><div class="kv"><span>Ответы в группах</span><span>на вопросы</span></div><div class="kv"><span>Связка с Remont CG</span><span>заявка на ремонт</span></div></div>';
- return '<div class="card"><div class="muted">Проект Ольки (Olga Ber): шерсть и изделия. Ведём страницу. Нужны фото и истории: бот не выдумывает детали.</div></div>';
+ const W=D.mw||{};
+ return '<div class="card"><div class="muted">Вязаные вещи для детей 0–3 месяцев. Страница ведёт вступления в группы Черногории, ответы на комментарии и сбор заявок.</div></div>'+
+  '<h2>Статистика</h2><div class="card"><div class="kv"><span>Фото в каталоге</span><span>'+(has?(W.ph||0):'—')+'</span></div><div class="kv"><span>Вступила в группы</span><span>'+(has?(W.gm||0):'—')+'</span></div><div class="kv"><span>Заявки в группы</span><span>'+(has?(W.gr||0):'—')+'</span></div><div class="kv"><span>Заявки покупателей</span><span>'+(has?(W.ld||0):'—')+'</span></div></div>'+
+  '<h2>Как добавить фото</h2><div class="card"><div class="muted">В чат «Ai Agent» напиши «мв фото», затем присылай фото. В подписи цена, размер, материал. Выключить: «мв стоп».</div></div>'+
+  '<div class="muted" style="margin-top:10px">Нужен отдельный Chrome страницы (порт 9225). Пока режим «тень».</div>';
 }
 let tab='home',proj=null;
 function render(){
