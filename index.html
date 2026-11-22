@@ -54,6 +54,7 @@ function dec(){try{const h=(new URLSearchParams(location.search).get('d'))||loca
 function send(c){if(tg){tg.sendData(JSON.stringify({c:c}));}else{alert('Открой пульт из Telegram');}}
 function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 const D=dec()||{};
+function nm(x){return String(x).replace(/^claude-/,'').replace(/-flash-\d+$/,' flash').replace(/-/g,' ')}
 const has=!!dec();
 const paused=!!D.paused, auto=D.mode==='auto', pend=D.pend||[], ac=D.ac||0, sc=D.sc||0;
 const chev='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9BB0C3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>';
@@ -67,9 +68,13 @@ const PROJ=[
  {k:'bar',c:'var(--warn)',n:'Группа «Бар, Черногория»',s:()=>has?('Модерация: '+(auto?'авто':'вручную')+', ждут: '+pend.length):'Модерирует бот от имени CityBot',w:1},
  {k:'rem',c:'var(--ok)',n:'Remont CG',s:()=>'Радар запросов из групп'},
  {k:'home',c:'var(--ok)',n:'yourhome.me',s:()=>'Присмотр за домом'},
+ {k:'cart',c:'var(--ok)',n:'Мульт-ролики ЧС',s:()=>has?('Карточки и голос, потрачено $'+String(((D.cart||{}).usd||0)).replace('.',',')):'Ролики по новостям: карточки и голос'},
  {k:'wool',c:'var(--warn)',n:'MonteWool',s:()=>has?('Вещей: '+((D.mw||{}).it||0)+' (в наличии '+((D.mw||{}).av||0)+'), групп: '+((D.mw||{}).gm||0)+', заявок в группы: '+((D.mw||{}).gr||0)+', заявок покупателей: '+((D.mw||{}).ld||0)):'Страница Ольки: вязаные вещи 0–3 мес'}
 ];
 function projDetail(k){
+ if(k==='cart'){const C=D.cart||{};return '<div class="card"><div class="muted">Потрачено на ролики</div><div class="big">'+(has?'$'+String(C.usd||0).replace('.',','):'—')+'</div><div class="muted">Режим: '+esc(C.mode||'эконом')+' · голос: '+esc(C.voice||'onyx')+'</div></div>'+
+  '<h2>Как сделать ролик</h2><div class="card"><div class="muted">В группе «Ai Agent» напиши «мульт 78» (номер поста ЧС), бот покажет сценарий и цену, потом «мульт ок».</div></div>'+
+  '<div class="btns"><button class="main" data-c="мульт расход">Расход</button><button class="ghost" data-c="мульт статус">Статус</button></div><div class="btns"><button class="ghost" data-c="мульт голос">Пробы голосов</button><button class="warnb" data-c="мульт стоп">Стоп</button></div>';}
  if(k==='chs')return '<div class="card"><div class="muted">Последний автопост</div><div class="big">'+(has?'сегодня '+ac:'—')+'</div><div class="muted">Telegram-канал и VK. Перед выходом бот сверяет факты по источникам.</div></div>'+
   '<h2>Площадки</h2><div class="chips"><span class="chip">Telegram-канал</span><span class="chip">VK</span><span class="chip">Facebook-страница</span><span class="chip">Дзен</span><span class="chip">WhatsApp</span><span class="chip" style="border:1px solid var(--warn);color:var(--warn)">Threads: ждёт ключ</span></div>'+
   '<h2>Задачи Claude</h2><div class="card"><div class="kv"><span>12:07 посты в свои группы</span><span>нужен Chrome</span></div><div class="kv"><span>15:23 комментарии</span><span>по расписанию</span></div></div>'+
@@ -97,7 +102,10 @@ function render(){
  let h='';
  if(tab==='home'&&!proj){
   h+='<div class="row"><h1>Пульт агента</h1><span class="pill"><i style="background:'+(has?(paused?'var(--warn)':'var(--ok)'):'var(--muted)')+'"></i>'+(has?(paused?'ЧС: пауза':'Бот работает'):'нет данных')+'</span></div>'+when();
-  h+='<div class="card"><div class="row"><span class="muted">Баланс OpenRouter</span>'+(has&&D.bal!=null&&D.bal<2?'<span style="color:var(--warn);font-size:12px;font-weight:600">пополнить</span>':'')+'</div><div class="big">'+(has&&D.bal!=null?'≈ $'+String(D.bal).replace('.',','):'—')+'</div><div class="chips"><span class="chip">Основной: DeepSeek v4.1 flash</span><span class="chip">Помощник: Gemini 4 hydrogen</span></div></div>';
+  const M=D.mdl||{},B=D.brn||{};
+  const kl=(has&&D.kl!=null)?D.kl:null;
+  h+='<div class="card"><div class="row"><span class="muted">Баланс OpenRouter</span>'+(kl!=null&&kl<1.5?'<span style="color:var(--warn);font-size:12px;font-weight:600">лимит ключа почти исчерпан</span>':(has&&D.bal!=null&&D.bal<2?'<span style="color:var(--warn);font-size:12px;font-weight:600">пополнить</span>':''))+'</div><div class="big">'+(has&&D.bal!=null?'≈ $'+String(D.bal).replace('.',','):'—')+'</div>'+(kl!=null?'<div class="muted">лимит ключа осталось $'+String(kl).replace('.',',')+'</div>':'')+'<div class="muted" style="margin-top:8px">Модели: '+esc(nm(M.m||'DeepSeek'))+' (основная) · '+esc(nm(M.h||'Haiku'))+' (помощник) · '+esc(nm(M.b||'Sonnet'))+' (чат)</div></div>';
+  h+='<div class="card"><div class="row"><div><b style="font-size:15px">Умный чат в группе</b><div class="muted">'+(has?(B.off?'молчит':'отвечает')+', сегодня $'+String(B.sp||0).replace('.',',')+' из $'+(B.cap||2):'Ответы на свободный текст')+'</div></div><button class="ghost" data-c="'+(B.off?'говори':'тихо')+'" style="min-width:84px">'+(B.off?'Включить':'Тихо')+'</button></div><div class="btns"><button class="ghost" data-c="память">Что помнит</button><button class="ghost" id="refresh">Обновить</button></div></div>';
   h+='<h2>Проекты</h2>'+PROJ.map(p=>'<div class="card pr'+(p.w?' warnc':'')+'" data-p="'+p.k+'"><span class="d" style="background:'+p.c+'"></span><div class="t"><b>'+p.n+'</b><span>'+esc(p.s())+'</span></div>'+chev+'</div>').join('');
  }else if(tab==='home'&&proj){
   const p=PROJ.find(x=>x.k===proj);
@@ -111,11 +119,13 @@ function render(){
   '<div class="card"><div class="row"><b style="font-size:15px">Новости Сербии</b><span class="muted">ежедневно с 11:00</span></div><div class="muted" style="margin-top:6px">Выжимка из 14 сербских сайтов: визы, ВНЖ, налоги, цены, жильё.</div></div>'+
   '<div class="card"><div class="row"><b style="font-size:15px">Telegram Сербии</b><span class="muted">раз в день</span></div><div class="muted" style="margin-top:6px">Обход 8 публичных каналов: темы, реклама, отклик.</div></div>'+
   '<div class="card"><div class="row"><b style="font-size:15px">Публикации</b><span class="muted">сегодня</span></div><div class="kv"><span>Черногория Сегодня</span><span>'+(has?ac:'—')+'</span></div><div class="kv"><span>Сербия Сегодня, канал</span><span>'+(has?sc:'—')+'</span></div><div class="kv"><span>Сербия Сегодня, Facebook</span><span>'+(has?(D.fs||0):'—')+'</span></div><div class="kv"><span>MonteWool, постов в группы</span><span>'+(has?((D.mw||{}).pp||0):'—')+'</span></div></div>'+
+  '<div class="card"><div class="row"><b style="font-size:15px">Расходы бота</b><span class="muted">с начала работы</span></div><div class="kv"><span>Мульт-ролики</span><span>'+(has?'$'+String((D.cart||{}).usd||0).replace('.',','):'—')+'</span></div><div class="kv"><span>Умный чат, сегодня</span><span>'+(has?'$'+String((D.brn||{}).sp||0).replace('.',','):'—')+'</span></div></div>'+
   '<div class="card"><div class="muted">Чеки и расходы: фото чека в чат «Ai Agent», строки пишутся в таблицу на ПК.</div></div>';
  }
  v.innerHTML=h;v.scrollTop=0;
  v.querySelectorAll('[data-p]').forEach(e=>e.onclick=()=>{proj=e.dataset.p;render();});
  v.querySelectorAll('[data-c]').forEach(e=>e.onclick=()=>send(e.dataset.c));
+ const rf=document.getElementById('refresh');if(rf)rf.onclick=()=>send('обновить пульт');
  v.querySelectorAll('[data-go]').forEach(e=>e.onclick=()=>{tab=e.dataset.go;proj=null;render();});
  const b=document.getElementById('back');if(b)b.onclick=()=>{proj=null;render();};
 }
