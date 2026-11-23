@@ -83,6 +83,7 @@ function stats(n){const m=M(n);if(!m)return '<div class="card"><div class="muted
  if(m.vk)h+='<div class="kv"><span>VK, подписчики</span><span>'+f(m.vk.subs)+'</span></div>'+r('VK, просмотры',m.vk.v1,m.vk.v7);
  if(m.mw)h+=r('Посты на странице',m.mw.page1,m.mw.page7)+'<div class="kv"><span>Посты в группы сегодня</span><span>'+f(m.mw.gp1)+'</span></div>';
  if(m.jn)h+='<div class="kv"><span>Группы: свои / участник / заявки</span><span>'+f(m.jn.own)+' / '+f(m.jn.mem)+' / '+f(m.jn.req)+'</span></div>';
+ if(m.jn&&m.jn.aok!==undefined)h+='<div class="kv"><span>Аудит групп: годные / отсеяны</span><span>'+f(m.jn.aok)+' / '+f(m.jn.abad)+'</span></div><div class="kv"><span>Постов в группы за 7 дней</span><span>'+f(m.jn.gp7)+'</span></div>';
  return h+'</div>';}
 function projDetail(k){
  if(k==='cart'){const C=D.cart||{};return '<div class="card"><div class="muted">Потрачено на ролики</div><div class="big">'+(has?'$'+String(C.usd||0).replace('.',','):'—')+'</div><div class="muted">Режим: '+esc(C.mode||'эконом')+' · голос: '+esc(C.voice||'onyx')+'</div></div>'+
