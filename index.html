@@ -45,6 +45,7 @@ nav a.on{color:var(--ok);font-weight:600}
 <nav>
  <a data-t="home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Главная</a>
  <a data-t="queue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span>Очередь<span id="qb"></span></span></a>
+ <a data-t="agent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="7" width="14" height="12" rx="3"/><path d="M12 7V3"/><circle cx="9.5" cy="13" r="1"/><circle cx="14.5" cy="13" r="1"/></svg>Агент</a>
  <a data-t="reports"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>Отчёты</a>
 </nav>
 <script>
@@ -57,6 +58,7 @@ const D=dec()||{};
 function nm(x){return String(x).replace(/^claude-/,'').replace(/-flash-\d+$/,' flash').replace(/-/g,' ')}
 const has=!!dec();
 const paused=!!D.paused, auto=D.mode==='auto', pend=D.pend||[], ac=D.ac||0, sc=D.sc||0;
+const AG=D.ag||{}, MK=AG.mk||{}, OFF=AG.off||[], PR=AG.pr||[], MODS='health,tgrouter,receipts,chs_publish,outbox,cartoon,metrics,housekeeping,cmdrun,slotwatch,fbinsights,weeklyrep,budgetwatch,marketbot,marketgroup,marketstats,brainmem,brainlearn,backup,brainskills,statusboard,weeklyinsight'.split(',');
 const chev='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9BB0C3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>';
 const arrow='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
 function when(){if(!has)return '<div class="muted" style="margin-top:6px">Нет данных. Открой пульт кнопкой из личного чата с ботом (/пульт).</div>';
@@ -66,6 +68,7 @@ const PROJ=[
  {k:'chs',c:'var(--ok)',n:'Черногория Сегодня',s:()=>has?(M('ЧС')?'Касаний сегодня: '+f(M('ЧС').touch1)+', автопостов: '+ac:(paused?'Автопосты на паузе':'Автопосты идут, сегодня: '+ac)):'Автопосты, проверка фактов'},
  {k:'ss',c:'var(--ok)',n:'Сербия Сегодня',s:()=>has?'Канал сегодня: '+sc+', Facebook: '+(D.fs||0):'Автопостинг в Telegram-канал'},
  {k:'bar',c:'var(--warn)',n:'Группа «Бар, Черногория»',s:()=>has?('Модерация: '+(auto?'авто':'вручную')+', ждут: '+pend.length):'Модерирует бот от имени CityBot',w:1},
+ {k:'mk',c:'var(--ok)',n:'Барахолка SecondHand',s:()=>has&&AG.mk?('Вещей в продаже: '+(MK.a||0)+', ждут одобрения: '+(MK.q||0)+', режим: '+(MK.m==='auto'?'авто':'вручную')):'Объявления, подборки в группы'},
  {k:'rem',c:'var(--ok)',n:'Remont CG',s:()=>'Радар запросов из групп'},
  {k:'home',c:'var(--ok)',n:'yourhome.me',s:()=>'Присмотр за домом'},
  {k:'cart',c:'var(--ok)',n:'Мульт-ролики ЧС',s:()=>has?('Карточки и голос, потрачено $'+String(((D.cart||{}).usd||0)).replace('.',',')):'Ролики по новостям: карточки и голос'},
@@ -86,6 +89,9 @@ function stats(n){const m=M(n);if(!m)return '<div class="card"><div class="muted
  if(m.jn&&m.jn.aok!==undefined)h+='<div class="kv"><span>Аудит групп: годные / отсеяны</span><span>'+f(m.jn.aok)+' / '+f(m.jn.abad)+'</span></div><div class="kv"><span>Постов в группы за 7 дней</span><span>'+f(m.jn.gp7)+'</span></div>';
  return h+'</div>';}
 function projDetail(k){
+ if(k==='mk'){const m=MK.m==='auto';return '<div class="card"><div class="muted">В продаже</div><div class="big">'+(has&&AG.mk?(MK.a||0):'—')+'</div><div class="muted">Ждут твоего одобрения: '+(has&&AG.mk?(MK.q||0):'—')+'. Продано: '+(has&&AG.mk?(MK.s||0):'—')+'.</div></div>'+
+  '<h2>Публикация</h2><div class="card"><div class="muted">Режим: <b style="color:var(--text)">'+(m?'авто, объявление выходит сразу':'вручную, сначала тебе на одобрение')+'</b></div>'+(has?'<div class="btns"><button class="'+(m?'ghost':'main')+'" data-c="'+(m?'маркет вручную':'маркет авто')+'">'+(m?'Перевести на вручную':'Включить авто')+'</button></div>':'')+'</div>'+
+  '<h2>Куда выходит</h2><div class="chips"><span class="chip">Страница SecondHand</span><span class="chip">Группа Bar. SecondHand</span><span class="chip">Бар, Черногория</span><span class="chip">Русская группа</span><span class="chip">Telegram-группа</span></div>';}
  if(k==='cart'){const C=D.cart||{};return '<div class="card"><div class="muted">Потрачено на ролики</div><div class="big">'+(has?'$'+String(C.usd||0).replace('.',','):'—')+'</div><div class="muted">Режим: '+esc(C.mode||'эконом')+' · голос: '+esc(C.voice||'onyx')+'</div></div>'+
   '<h2>Как сделать ролик</h2><div class="card"><div class="muted">В группе «Ai Agent» напиши «мульт 78» (номер поста ЧС), бот покажет сценарий и цену, потом «мульт ок».</div></div>'+
   '<div class="btns"><button class="main" data-c="мульт расход">Расход</button><button class="ghost" data-c="мульт статус">Статус</button></div><div class="btns"><button class="ghost" data-c="мульт голос">Пробы голосов</button><button class="warnb" data-c="мульт стоп">Стоп</button></div>';}
@@ -128,6 +134,17 @@ function render(){
   h+='<h1>Очередь решений</h1><div class="muted" style="margin-top:6px">То, что бот не делает без твоего «ок».</div>';
   h+='<div class="card"><div class="row"><div><b style="font-size:15px">Автомодерация «Бара»</b><div class="muted">'+(auto?'Авто: бот удаляет рекламу сам':'Вручную: бот присылает список')+'</div></div><button class="'+(auto?'main':'ghost')+'" data-c="'+(auto?'мод вручную':'мод авто')+'" style="min-width:84px">'+(auto?'Авто':'Вручную')+'</button></div></div>';
   h+=!has?'<div class="card muted">Нет данных. Открой пульт кнопкой из чата с ботом.</div>':(!pend.length?'<div class="card muted">Пока ничего не ждёт.</div>':pend.map(x=>'<div class="card"><div class="muted" style="color:var(--warn);font-weight:600">мод '+esc(x.n)+' · '+esc(x.who||'автор неизвестен')+'</div><div class="btns"><button class="bad" data-c="мод '+esc(x.n)+'">Удалить и мьют</button><button class="ghost" data-c="мод '+esc(x.n)+' нет">Оставить</button></div></div>').join(''));
+ }else if(tab==='agent'){
+  const mark=(ok)=>'<span style="color:var(--'+(ok?'ok':'bad')+')">'+(ok?'работает':'не отвечает')+'</span>';
+  h+='<h1>Агент</h1>'+when();
+  if(!has||AG.bk===undefined){h+='<div class="card muted">Нет данных. Нажми «Обновить пульт» в чате.</div>';}
+  else{
+   h+='<div class="card"><div class="kv"><span>Слушатель бота</span><span>'+mark(AG.hb)+'</span></div><div class="kv"><span>Сторож</span><span>'+mark(AG.wd)+'</span></div><div class="kv"><span>Помощник за сутки</span><span>$'+String(AG.sp==null?0:AG.sp).replace('.',',')+'</span></div><div class="btns"><button class="ghost" data-c="статус">Полный статус в чат</button></div></div>';
+   h+='<h2>Копии</h2><div class="card"><div class="kv"><span>Последняя копия</span><span>'+(AG.bk>=0?(AG.bk<2?'меньше часа назад':AG.bk+' ч назад'):'нет')+'</span></div><div class="kv"><span>В «Нашем облаке»</span><span>'+esc(AG.tg||'ещё не было')+'</span></div></div>';
+   h+='<h2>Модули ('+(MODS.length-OFF.length)+' из '+MODS.length+')</h2><div class="card">'+MODS.map(n=>{const off=OFF.indexOf(n)>=0;return '<div class="row" style="min-height:44px"><span style="font-size:14px;'+(off?'color:var(--muted);text-decoration:line-through':'')+'">'+esc(n)+'</span><button class="'+(off?'main':'ghost')+'" data-c="модуль '+esc(n)+' '+(off?'вкл':'выкл')+'" style="min-height:36px;min-width:84px">'+(off?'Включить':'Выключить')+'</button></div>';}).join('')+'</div>';
+   h+='<h2>Навыки: предложения</h2>'+(PR.length?PR.map(x=>'<div class="card"><div class="muted" style="color:var(--warn);font-weight:600">'+esc(x.t)+'</div><div class="btns"><button class="main" data-c="навык ок '+x.n+'">Принять</button><button class="ghost" data-c="навык нет '+x.n+'">Отклонить</button></div></div>').join(''):'<div class="card muted">Пока нет предложений.</div>');
+   h+='<h2>Чему научился</h2><div class="card"><div class="kv"><span>Выученных правил</span><span>'+(AG.ru||0)+'</span></div>'+(AG.ins?'<div class="muted" style="margin-top:6px">Вывод недели: '+esc(AG.ins)+'</div>':'')+'</div>';
+  }
  }else{
   h+='<h1>Отчёты</h1>'+
   '<div class="card"><div class="row"><b style="font-size:15px">Новости Сербии</b><span class="muted">ежедневно с 11:00</span></div><div class="muted" style="margin-top:6px">Выжимка из 14 сербских сайтов: визы, ВНЖ, налоги, цены, жильё.</div></div>'+
