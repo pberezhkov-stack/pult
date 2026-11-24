@@ -46,6 +46,7 @@ nav a.on{color:var(--ok);font-weight:600}
  <a data-t="home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Главная</a>
  <a data-t="queue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span>Очередь<span id="qb"></span></span></a>
  <a data-t="agent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="7" width="14" height="12" rx="3"/><path d="M12 7V3"/><circle cx="9.5" cy="13" r="1"/><circle cx="14.5" cy="13" r="1"/></svg>Агент</a>
+ <a data-t="fin"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9v.01M18 15v.01"/></svg>Деньги</a>
  <a data-t="reports"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>Отчёты</a>
 </nav>
 <script>
@@ -58,6 +59,7 @@ const D=dec()||{};
 function nm(x){return String(x).replace(/^claude-/,'').replace(/-flash-\d+$/,' flash').replace(/-/g,' ')}
 const has=!!dec();
 const paused=!!D.paused, auto=D.mode==='auto', pend=D.pend||[], ac=D.ac||0, sc=D.sc||0;
+const FN=D.fin||{};
 const AG=D.ag||{}, MK=AG.mk||{}, OFF=AG.off||[], PR=AG.pr||[], MODS='health,tgrouter,receipts,chs_publish,outbox,metrics,housekeeping,cmdrun,slotwatch,fbinsights,weeklyrep,budgetwatch,marketbot,marketgroup,marketstats,brainmem,brainlearn,backup,brainskills,statusboard,weeklyinsight'.split(',');
 const chev='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9BB0C3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>';
 const arrow='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
@@ -130,6 +132,21 @@ function render(){
   h+='<h1>Очередь решений</h1><div class="muted" style="margin-top:6px">То, что бот не делает без твоего «ок».</div>';
   h+='<div class="card"><div class="row"><div><b style="font-size:15px">Автомодерация «Бара»</b><div class="muted">'+(auto?'Авто: бот удаляет рекламу сам':'Вручную: бот присылает список')+'</div></div><button class="'+(auto?'main':'ghost')+'" data-c="'+(auto?'мод вручную':'мод авто')+'" style="min-width:84px">'+(auto?'Авто':'Вручную')+'</button></div></div>';
   h+=!has?'<div class="card muted">Нет данных. Открой пульт кнопкой из чата с ботом.</div>':(!pend.length?'<div class="card muted">Пока ничего не ждёт.</div>':pend.map(x=>'<div class="card"><div class="muted" style="color:var(--warn);font-weight:600">мод '+esc(x.n)+' · '+esc(x.who||'автор неизвестен')+'</div><div class="btns"><button class="bad" data-c="мод '+esc(x.n)+'">Удалить и мьют</button><button class="ghost" data-c="мод '+esc(x.n)+' нет">Оставить</button></div></div>').join(''));
+ }else if(tab==='fin'){
+  const eur=x=>(x==null?'—':Number(x).toLocaleString('ru-RU',{maximumFractionDigits:0})+' €');
+  const E=(FN.e||{}), I=(FN.i||{}), PE=(FN.pe||{}), PI=(FN.pi||{});
+  const e1=E.EUR||0, i1=I.EUR||0, bal=i1-e1;
+  h+='<h1>Деньги</h1><div class="muted" style="margin-top:6px">'+(has&&FN.mo?'Месяц '+esc(FN.mo)+'. Расходы из чеков, доходы из записей «доход» в боте.':'')+'</div>'+when();
+  if(!has||!FN.mo){h+='<div class="card muted">Нет данных. Нажми «Обновить пульт» в чате.</div>';}
+  else{
+   h+='<div class="card"><div class="row"><div><div class="muted">Доход</div><div class="big" style="color:var(--ok)">'+eur(i1)+'</div></div><div style="text-align:right"><div class="muted">Расход</div><div class="big" style="color:var(--bad)">'+eur(e1)+'</div></div></div><div class="kv" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px"><span>Разница за месяц</span><span style="color:var(--'+(bal>=0?'ok':'bad')+');font-weight:700">'+(bal>=0?'+':'')+eur(bal)+'</span></div></div>';
+   h+='<div class="card"><div class="kv"><span>Прошлый месяц: доход</span><span>'+eur(PI.EUR||0)+'</span></div><div class="kv"><span>Прошлый месяц: расход</span><span>'+eur(PE.EUR||0)+'</span></div>'+(Object.keys(E).filter(k=>k!=='EUR').map(k=>'<div class="kv"><span>Расход в '+esc(k)+'</span><span>'+Number(E[k]).toLocaleString('ru-RU',{maximumFractionDigits:0})+'</span></div>').join(''))+'</div>';
+   const C=FN.c||[];
+   if(C.length){const mx=Math.max.apply(null,C.map(x=>x[1]))||1;h+='<h2>Расходы по категориям</h2><div class="card">'+C.map(x=>'<div style="margin:8px 0"><div class="row" style="font-size:14px"><span>'+esc(x[0])+'</span><span style="color:var(--muted)">'+eur(x[1])+'</span></div><div style="height:6px;border-radius:3px;background:var(--bg);margin-top:4px"><div style="height:6px;border-radius:3px;background:var(--bad);width:'+Math.max(4,Math.round(x[1]/mx*100))+'%"></div></div></div>').join('')+'</div>';}
+   const L=FN.il||[];
+   h+='<h2>Последние доходы</h2><div class="card">'+(L.length?L.map(x=>x.value||x).map(x=>'<div class="kv"><span>'+esc(x[0])+' · '+esc(x[1])+'</span><span style="color:var(--ok)">+'+eur(x[2])+'</span></div>').join(''):'<div class="muted">Пока нет записей.</div>')+'</div>';
+   h+='<div class="card"><div class="muted">Добавить доход: напиши боту «доход 50 бойлер» (евро по умолчанию) или скажи голосом. Отменить последний: «доход отмена». Расходы идут из чеков.</div></div>';
+  }
  }else if(tab==='agent'){
   const mark=(ok)=>'<span style="color:var(--'+(ok?'ok':'bad')+')">'+(ok?'работает':'не отвечает')+'</span>';
   h+='<h1>Агент</h1>'+when();
