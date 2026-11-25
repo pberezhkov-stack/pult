@@ -52,10 +52,12 @@ nav a.on{color:var(--ok);font-weight:600}
 <script>
 const tg=window.Telegram&&Telegram.WebApp;
 if(tg){tg.ready();tg.expand();}
-function dec0(){try{const h=(new URLSearchParams(location.search).get('d'))||location.hash.replace(/^#/,'');if(!h)return null;const b=h.replace(/-/g,'+').replace(/_/g,'/');const bin=atob(b+'==='.slice((b.length+3)%4));return JSON.parse(decodeURIComponent(escape(bin)));}catch(e){return null}}
+const HP=(function(){const h=location.hash.replace(/^#/,'');try{return new URLSearchParams(h.indexOf('=')>=0?h:'');}catch(e){return new URLSearchParams('');}})(),SP=new URLSearchParams(location.search);
+function gp(n){return HP.get(n)||SP.get(n);}
+function dec0(){try{const h=gp('d')||location.hash.replace(/^#/,'');if(!h)return null;const b=h.replace(/-/g,'+').replace(/_/g,'/');const bin=atob(b+'==='.slice((b.length+3)%4));return JSON.parse(decodeURIComponent(escape(bin)));}catch(e){return null}}
 function dec(){const a=dec0();let c=null;try{c=JSON.parse(localStorage.getItem('pultc')||'null');}catch(e){}
  if(c&&c.ts&&(!a||c.ts>(a.ts||0)))return c;return a;}
-const PQ=new URLSearchParams(location.search),PTOP=PQ.get('t'),PKEY=PQ.get('k');
+const PTOP=gp('t'),PKEY=gp('k');
 async function pultFetch(){
  if(!PTOP||!PKEY||!window.crypto||!crypto.subtle||typeof DecompressionStream==='undefined')return null;
  const r=await fetch('https://ntfy.sh/'+encodeURIComponent(PTOP)+'/json?poll=1&since=2h',{cache:'no-store'});
