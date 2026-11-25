@@ -52,7 +52,34 @@ nav a.on{color:var(--ok);font-weight:600}
 <script>
 const tg=window.Telegram&&Telegram.WebApp;
 if(tg){tg.ready();tg.expand();}
-function dec(){try{const h=(new URLSearchParams(location.search).get('d'))||location.hash.replace(/^#/,'');if(!h)return null;const b=h.replace(/-/g,'+').replace(/_/g,'/');const bin=atob(b+'==='.slice((b.length+3)%4));return JSON.parse(decodeURIComponent(escape(bin)));}catch(e){return null}}
+function dec0(){try{const h=(new URLSearchParams(location.search).get('d'))||location.hash.replace(/^#/,'');if(!h)return null;const b=h.replace(/-/g,'+').replace(/_/g,'/');const bin=atob(b+'==='.slice((b.length+3)%4));return JSON.parse(decodeURIComponent(escape(bin)));}catch(e){return null}}
+function dec(){const a=dec0();let c=null;try{c=JSON.parse(localStorage.getItem('pultc')||'null');}catch(e){}
+ if(c&&c.ts&&(!a||c.ts>(a.ts||0)))return c;return a;}
+const PQ=new URLSearchParams(location.search),PTOP=PQ.get('t'),PKEY=PQ.get('k');
+async function pultFetch(){
+ if(!PTOP||!PKEY||!window.crypto||!crypto.subtle||typeof DecompressionStream==='undefined')return null;
+ const r=await fetch('https://ntfy.sh/'+encodeURIComponent(PTOP)+'/json?poll=1&since=2h',{cache:'no-store'});
+ const tx=await r.text(),G={};
+ tx.split('\n').forEach(l=>{if(!l.trim())return;try{const m=JSON.parse(l);if(m.event!=='message'||!m.title)return;const p=m.title.split('-');if(p.length!==3)return;(G[p[0]]=G[p[0]]||{n:+p[2],p:{}}).p[p[1]]=m.message;}catch(e){}});
+ const ss=Object.keys(G).filter(k=>Object.keys(G[k].p).length===G[k].n).sort((a,b)=>b-a);
+ if(!ss.length)return null;
+ const g=G[ss[0]];let b='';for(let i=0;i<g.n;i++)b+=g.p[i];
+ const bin=Uint8Array.from(atob(b),c=>c.charCodeAt(0));
+ const k0=PKEY.replace(/-/g,'+').replace(/_/g,'/'),kr=Uint8Array.from(atob(k0+'==='.slice((k0.length+3)%4)),c=>c.charCodeAt(0));
+ const key=await crypto.subtle.importKey('raw',kr,'AES-CBC',false,['decrypt']);
+ const pt=await crypto.subtle.decrypt({name:'AES-CBC',iv:bin.slice(0,16)},key,bin.slice(16));
+ const js=await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();
+ return JSON.parse(js);
+}
+async function pultSync(){
+ try{const f=await pultFetch();if(!f||!f.ts)return;const cur=(dec()||{}).ts||0;if(f.ts<=cur)return;
+  try{localStorage.setItem('pultc',JSON.stringify(f));}catch(e){}
+  let last=0;try{last=+sessionStorage.getItem('pultrl')||0;}catch(e){}
+  if(Date.now()-last>20000){try{sessionStorage.setItem('pultrl',String(Date.now()));}catch(e){}location.reload();}
+ }catch(e){}
+}
+pultSync();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pultSync();});
 function send(c){if(tg){tg.sendData(JSON.stringify({c:c}));}else{alert('Открой пульт из Telegram');}}
 function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 const D=dec()||{};
@@ -64,7 +91,7 @@ const AG=D.ag||{}, MK=AG.mk||{}, OFF=AG.off||[], PR=AG.pr||[], MODS='health,tgro
 const chev='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9BB0C3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>';
 const arrow='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
 function when(){if(!has)return '<div class="muted" style="margin-top:6px">Нет данных. Открой пульт кнопкой из личного чата с ботом (/пульт).</div>';
- const t=new Date(D.ts*1000);let s='<div class="muted" style="margin-top:6px">Данные на '+t.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+'. Свежие: «Обновить пульт» в чате.</div>';
+ const t=new Date(D.ts*1000);let s='<div class="muted" style="margin-top:6px">Данные на '+t.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+'. Обновляется само при открытии.</div>';
  if(Date.now()/1000-D.ts>900)s+='<div class="stale">Данные старше 15 минут</div>';return s;}
 const PROJ=[
  {k:'chs',c:'var(--ok)',n:'Черногория Сегодня',s:()=>has?(M('ЧС')?'Касаний сегодня: '+f(M('ЧС').touch1)+', автопостов: '+ac:(paused?'Автопосты на паузе':'Автопосты идут, сегодня: '+ac)):'Автопосты, проверка фактов'},
@@ -123,7 +150,7 @@ function render(){
   const M=D.mdl||{},B=D.brn||{};
   const kl=(has&&D.kl!=null)?D.kl:null;
   h+='<div class="card"><div class="row"><span class="muted">Баланс OpenRouter</span>'+(kl!=null&&kl<1.5?'<span style="color:var(--warn);font-size:12px;font-weight:600">лимит ключа почти исчерпан</span>':(has&&D.bal!=null&&D.bal<2?'<span style="color:var(--warn);font-size:12px;font-weight:600">пополнить</span>':''))+'</div><div class="big">'+(has&&D.bal!=null?'≈ $'+String(D.bal).replace('.',','):'—')+'</div>'+(kl!=null?'<div class="muted">лимит ключа осталось $'+String(kl).replace('.',',')+'</div>':'')+'<div class="muted" style="margin-top:8px">Модели: '+esc(nm(M.m||'DeepSeek'))+' (основная) · '+esc(nm(M.h||'Haiku'))+' (помощник) · '+esc(nm(M.b||'Sonnet'))+' (чат)</div></div>';
-  h+='<div class="card"><div class="row"><div><b style="font-size:15px">Умный чат в группе</b><div class="muted">'+(has?(B.off?'молчит':'отвечает')+', сегодня $'+String(B.sp||0).replace('.',',')+' из $'+(B.cap||2):'Ответы на свободный текст')+'</div></div><button class="ghost" data-c="'+(B.off?'говори':'тихо')+'" style="min-width:84px">'+(B.off?'Включить':'Тихо')+'</button></div><div class="btns"><button class="ghost" data-c="память">Что помнит</button><button class="ghost" id="refresh">Обновить</button></div></div>';
+  h+='<div class="card"><div class="row"><div><b style="font-size:15px">Умный чат в группе</b><div class="muted">'+(has?(B.off?'молчит':'отвечает')+', сегодня $'+String(B.sp||0).replace('.',',')+' из $'+(B.cap||2):'Ответы на свободный текст')+'</div></div><button class="ghost" data-c="'+(B.off?'говори':'тихо')+'" style="min-width:84px">'+(B.off?'Включить':'Тихо')+'</button></div><div class="btns"><button class="ghost" data-c="память">Что помнит</button>'+(PTOP?'':'<button class="ghost" id="refresh">Обновить</button>')+'</div></div>';
   h+='<h2>Проекты</h2>'+PROJ.map(p=>'<div class="card pr'+(p.w?' warnc':'')+'" data-p="'+p.k+'"><span class="d" style="background:'+p.c+'"></span><div class="t"><b>'+p.n+'</b><span>'+esc(p.s())+'</span></div>'+chev+'</div>').join('');
  }else if(tab==='home'&&proj){
   const p=PROJ.find(x=>x.k===proj);
