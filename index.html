@@ -82,7 +82,34 @@ async function pultSync(){
 }
 pultSync();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pultSync();});
-function send(c){if(tg){tg.sendData(JSON.stringify({c:c}));}else{alert('Открой пульт из Telegram');}}
+function b64u(s){const b=s.replace(/-/g,'+').replace(/_/g,'/');return Uint8Array.from(atob(b+'==='.slice((b.length+3)%4)),c=>c.charCodeAt(0));}
+function toast(t,bad){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.style.cssText='position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#1E2A38;color:#E6EDF3;padding:10px 16px;border-radius:12px;font-size:14px;z-index:9;box-shadow:0 4px 16px rgba(0,0,0,.4);transition:opacity .3s';document.body.appendChild(e);}
+ e.textContent=t;e.style.color=bad?'#FF8A80':'#E6EDF3';e.style.opacity='1';clearTimeout(toast.t);toast.t=setTimeout(()=>{e.style.opacity='0';},1800);}
+async function sendCmd(c){
+ const kr=b64u(PKEY),iv=crypto.getRandomValues(new Uint8Array(16));
+ const id=Array.from(crypto.getRandomValues(new Uint8Array(8))).map(x=>x.toString(16).padStart(2,'0')).join('');
+ const pt=new TextEncoder().encode(JSON.stringify({c:c,i:id,t:Math.floor(Date.now()/1000)}));
+ const k=await crypto.subtle.importKey('raw',kr,'AES-CBC',false,['encrypt']);
+ const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-CBC',iv:iv},k,pt));
+ const all=new Uint8Array(16+ct.length);all.set(iv,0);all.set(ct,16);
+ const mk=new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array([...kr,...new TextEncoder().encode('mac')])));
+ const hk=await crypto.subtle.importKey('raw',mk,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const mac=Array.from(new Uint8Array(await crypto.subtle.sign('HMAC',hk,all))).map(x=>x.toString(16).padStart(2,'0')).join('');
+ let b='';for(let i=0;i<all.length;i++)b+=String.fromCharCode(all[i]);
+ const r=await fetch('https://ntfy.sh/'+encodeURIComponent(PTOP)+'-c',{method:'POST',body:btoa(b)+'.'+mac});
+ if(!r.ok)throw new Error('ntfy '+r.status);
+}
+const GONE=(function(){try{const o=JSON.parse(localStorage.getItem('pgone')||'{}'),n=Date.now(),r={};for(const k in o)if(n-o[k]<86400000)r[k]=o[k];return r;}catch(e){return {};}})();
+function goneSave(){try{localStorage.setItem('pgone',JSON.stringify(GONE));}catch(e){}}
+async function send(c){
+ if(PTOP&&PKEY&&window.crypto&&crypto.subtle){try{await sendCmd(c);toast('Отправлено');return true;}catch(e){toast('Не вышло, пробую через Telegram',true);}}
+ if(tg){tg.sendData(JSON.stringify({c:c}));return false;}else{alert('Открой пульт из Telegram');return false;}
+}
+function pendCmd(c){return /^(мод \d+( нет)?|навык (ок|нет) \d+)$/.test(c);}
+function pendKey(c){return c.replace(/ нет$/,'').replace(/^навык (ок|нет) /,'навык ');}
+async function press(e){const c=e.dataset.c;e.disabled=true;const ok=await send(c);
+ if(ok&&pendCmd(c)){GONE[pendKey(c)]=Date.now();goneSave();const cd=e.closest('.card');if(cd)cd.remove();}
+ else if(ok){e.textContent='✓ '+e.textContent;e.disabled=false;}else e.disabled=false;}
 function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 const D=dec()||{};
 function nm(x){return String(x).replace(/^claude-/,'').replace(/-flash-\d+$/,' flash').replace(/-/g,' ')}
@@ -160,7 +187,7 @@ function render(){
  }else if(tab==='queue'){
   h+='<h1>Очередь решений</h1><div class="muted" style="margin-top:6px">То, что бот не делает без твоего «ок».</div>';
   h+='<div class="card"><div class="row"><div><b style="font-size:15px">Автомодерация «Бара»</b><div class="muted">'+(auto?'Авто: бот удаляет рекламу сам':'Вручную: бот присылает список')+'</div></div><button class="'+(auto?'main':'ghost')+'" data-c="'+(auto?'мод вручную':'мод авто')+'" style="min-width:84px">'+(auto?'Авто':'Вручную')+'</button></div></div>';
-  h+=!has?'<div class="card muted">Нет данных. Открой пульт кнопкой из чата с ботом.</div>':(!pend.length?'<div class="card muted">Пока ничего не ждёт.</div>':pend.map(x=>'<div class="card"><div class="muted" style="color:var(--warn);font-weight:600">мод '+esc(x.n)+' · '+esc(x.who||'автор неизвестен')+'</div><div class="btns"><button class="bad" data-c="мод '+esc(x.n)+'">Удалить и мьют</button><button class="ghost" data-c="мод '+esc(x.n)+' нет">Оставить</button></div></div>').join(''));
+  h+=!has?'<div class="card muted">Нет данных. Открой пульт кнопкой из чата с ботом.</div>':(!pend.length?'<div class="card muted">Пока ничего не ждёт.</div>':pend.filter(x=>!GONE['мод '+x.n]).map(x=>'<div class="card"><div class="muted" style="color:var(--warn);font-weight:600">мод '+esc(x.n)+' · '+esc(x.who||'автор неизвестен')+'</div><div class="btns"><button class="bad" data-c="мод '+esc(x.n)+'">Удалить и мьют</button><button class="ghost" data-c="мод '+esc(x.n)+' нет">Оставить</button></div></div>').join(''));
  }else if(tab==='fin'){
   const eur=x=>(x==null?'—':Number(x).toLocaleString('ru-RU',{maximumFractionDigits:0})+' €');
   const E=(FN.e||{}), I=(FN.i||{}), PE=(FN.pe||{}), PI=(FN.pi||{});
@@ -184,7 +211,7 @@ function render(){
    h+='<div class="card"><div class="kv"><span>Слушатель бота</span><span>'+mark(AG.hb)+'</span></div><div class="kv"><span>Сторож</span><span>'+mark(AG.wd)+'</span></div><div class="kv"><span>Помощник за сутки</span><span>$'+String(AG.sp==null?0:AG.sp).replace('.',',')+'</span></div><div class="btns"><button class="ghost" data-c="статус">Полный статус в чат</button></div></div>';
    h+='<h2>Копии</h2><div class="card"><div class="kv"><span>Последняя копия</span><span>'+(AG.bk>=0?(AG.bk<2?'меньше часа назад':AG.bk+' ч назад'):'нет')+'</span></div><div class="kv"><span>В «Нашем облаке»</span><span>'+esc(AG.tg||'ещё не было')+'</span></div></div>';
    h+='<h2>Модули ('+(MODS.length-OFF.length)+' из '+MODS.length+')</h2><div class="card">'+MODS.map(n=>{const off=OFF.indexOf(n)>=0;return '<div class="row" style="min-height:44px"><span style="font-size:14px;'+(off?'color:var(--muted);text-decoration:line-through':'')+'">'+esc(n)+'</span><button class="'+(off?'main':'ghost')+'" data-c="модуль '+esc(n)+' '+(off?'вкл':'выкл')+'" style="min-height:36px;min-width:84px">'+(off?'Включить':'Выключить')+'</button></div>';}).join('')+'</div>';
-   h+='<h2>Навыки: предложения</h2>'+(PR.length?PR.map(x=>'<div class="card"><div class="muted" style="color:var(--warn);font-weight:600">'+esc(x.t)+'</div><div class="btns"><button class="main" data-c="навык ок '+x.n+'">Принять</button><button class="ghost" data-c="навык нет '+x.n+'">Отклонить</button></div></div>').join(''):'<div class="card muted">Пока нет предложений.</div>');
+   h+='<h2>Навыки: предложения</h2>'+(PR.length?PR.filter(x=>!GONE['навык '+x.n]).map(x=>'<div class="card"><div class="muted" style="color:var(--warn);font-weight:600">'+esc(x.t)+'</div><div class="btns"><button class="main" data-c="навык ок '+x.n+'">Принять</button><button class="ghost" data-c="навык нет '+x.n+'">Отклонить</button></div></div>').join(''):'<div class="card muted">Пока нет предложений.</div>');
    h+='<h2>Чему научился</h2><div class="card"><div class="kv"><span>Выученных правил</span><span>'+(AG.ru||0)+'</span></div>'+(AG.ins?'<div class="muted" style="margin-top:6px">Вывод недели: '+esc(AG.ins)+'</div>':'')+'</div>';
   }
  }else{
@@ -197,8 +224,8 @@ function render(){
  }
  v.innerHTML=h;v.scrollTop=0;
  v.querySelectorAll('[data-p]').forEach(e=>e.onclick=()=>{proj=e.dataset.p;render();});
- v.querySelectorAll('[data-c]').forEach(e=>e.onclick=()=>send(e.dataset.c));
- const rf=document.getElementById('refresh');if(rf)rf.onclick=()=>send('обновить пульт');
+ v.querySelectorAll('[data-c]').forEach(e=>e.onclick=()=>press(e));
+ const rf=document.getElementById('refresh');if(rf)rf.onclick=()=>{send('обновить пульт').then(ok=>{if(ok)setTimeout(pultSync,4000);});};
  v.querySelectorAll('[data-go]').forEach(e=>e.onclick=()=>{tab=e.dataset.go;proj=null;render();});
  const b=document.getElementById('back');if(b)b.onclick=()=>{proj=null;render();};
 }
